@@ -1,15 +1,7 @@
 const axios = require('axios');
 
-/**
- * Découpe un scénario texte libre en une liste structurée de cases de BD.
- * Chaque case contient : une description visuelle, les personnages présents,
- * et le dialogue à afficher dans les bulles.
- *
- * @param {string} scenario - Le texte du scénario écrit par l'utilisateur.
- * @returns {Promise<Array>} Liste de cases { description, personnages, dialogue }
- */
-async function decouperScenario(scenario) {
-  const prompt = `
+function construirePrompt(scenario) {
+  return `
 Tu es un scénariste de bande dessinée. Découpe le scénario suivant en cases de BD.
 Réponds UNIQUEMENT en JSON, sous la forme d'un tableau d'objets avec les clés :
 "description" (description visuelle de la scène pour un générateur d'image),
@@ -21,31 +13,62 @@ Scénario :
 ${scenario}
 """
 `.trim();
+}
 
+function nettoyerEtParser(texte) {
+  const propre = texte.replace(/```json|```/g, '').trim();
+  return JSON.parse(propre);
+}
+
+// Fournisseur 1 : Google Gemini (gratuit)
+async function viaGemini(prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`;
+  const response = await axios.post(url, {
+    contents: [{ parts: [{ text: prompt }] }],
+  });
+  return nettoyerEtParser(response.data.candidates[0].content.parts[0].text);
+}
+
+// Fournisseur 2 : Groq (gratuit, secours si Gemini échoue)
+async function viaGroq(prompt) {
   const response = await axios.post(
-    process.env.LLM_API_URL,
+    'https://api.groq.com/openai/v1/chat/completions',
     {
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
+      model: 'llama-3.1-8b-instant',
       messages: [{ role: 'user', content: prompt }],
     },
     {
       headers: {
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
         'Content-Type': 'application/json',
-        'x-api-key': process.env.LLM_API_KEY,
-        'anthropic-version': '2023-06-01',
       },
     }
   );
+  return nettoyerEtParser(response.data.choices[0].message.content);
+}
 
-  const texte = response.data.content
-    .filter((bloc) => bloc.type === 'text')
-    .map((bloc) => bloc.text)
-    .join('\n')
-    .replace(/```json|```/g, '')
-    .trim();
+/**
+ * Découpe un scénario en cases de BD. Essaie chaque fournisseur dans l'ordre ;
+ * passe au suivant si le précédent échoue (clé absente, quota dépassé, panne...).
+ */
+async function decouperScenario(scenario) {
+  const prompt = construirePrompt(scenario);
+  const fournisseurs = [
+    { nom: 'Gemini', actif: !!process.env.GEMINI_API_KEY, appel: viaGemini },
+    { nom: 'Groq', actif: !!process.env.GROQ_API_KEY, appel: viaGroq },
+  ];
 
-  return JSON.parse(texte);
+  let derniereErreur;
+  for (const fournisseur of fournisseurs) {
+    if (!fournisseur.actif) continue;
+    try {
+      return await fournisseur.appel(prompt);
+    } catch (err) {
+      console.warn(`Échec avec ${fournisseur.nom}, tentative du suivant...`);
+      derniereErreur = err;
+    }
+  }
+  throw derniereErreur || new Error('Aucune clé LLM configurée (GEMINI_API_KEY ou GROQ_API_KEY).');
 }
 
 module.exports = { decouperScenario };
