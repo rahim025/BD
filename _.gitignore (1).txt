@@ -1,0 +1,10 @@
+# Node
+backend/node_modules/
+backend/.env
+
+# Flutter
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/.packages
