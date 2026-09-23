@@ -29,7 +29,9 @@ router.post('/planche', async (req, res) => {
     res.json({ planche });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ erreur: 'Erreur lors de la génération de la planche.' });
+    // détail renvoyé pour faciliter le diagnostic pendant le développement
+    const detail = err.response?.data?.error?.message || err.response?.data || err.message;
+    res.status(500).json({ erreur: 'Erreur lors de la génération de la planche.', detail });
   }
 });
 
