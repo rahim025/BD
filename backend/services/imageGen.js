@@ -6,15 +6,17 @@ async function viaPollinations(promptComplet) {
   const seed = Math.floor(Math.random() * 1000000);
   const url = `https://image.pollinations.ai/prompt/${promptEncode}?seed=${seed}&width=768&height=768&nologo=true`;
 
-  // On vérifie que le service répond avant de renvoyer l'URL, sinon on bascule sur le secours.
-  await axios.head(url, { timeout: 15000 });
+  // On vérifie que le service répond avant de renvoyer l'URL (GET partiel, pas HEAD :
+  // certains serveurs comme Pollinations ne supportent pas HEAD et répondent en erreur).
+  await axios.get(url, { timeout: 20000, responseType: 'arraybuffer' });
   return url;
 }
 
-// Fournisseur 2 : Hugging Face Inference API (gratuit, secours si Pollinations échoue)
+// Fournisseur 2 : Hugging Face Inference Providers (gratuit, secours si Pollinations échoue)
+// L'ancien domaine api-inference.huggingface.co est fermé ; le nouveau point d'entrée est router.huggingface.co.
 async function viaHuggingFace(promptComplet) {
   const response = await axios.post(
-    'https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2',
+    'https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0',
     { inputs: promptComplet },
     {
       headers: {
