@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -16,6 +17,60 @@ class AppBdIa extends StatelessWidget {
       title: 'App BD IA',
       theme: ThemeData(colorSchemeSeed: Colors.deepPurple, useMaterial3: true),
       home: const EcranScenario(),
+    );
+  }
+}
+
+/// Bulle de dialogue façon BD : fond blanc, bordure noire, petite pointe en bas.
+class BulleDialogue extends StatelessWidget {
+  final String texte;
+
+  const BulleDialogue({super.key, required this.texte});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          constraints: const BoxConstraints(maxWidth: 260),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.black, width: 2),
+            boxShadow: const [
+              BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+            ],
+          ),
+          child: Text(
+            texte,
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              height: 1.3,
+            ),
+          ),
+        ),
+        Transform.translate(
+          offset: const Offset(20, -2),
+          child: Transform.rotate(
+            angle: pi / 4,
+            child: Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(color: Colors.black, width: 2),
+                  right: BorderSide(color: Colors.black, width: 2),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -117,16 +172,35 @@ class _EcranScenarioState extends State<EcranScenario> {
                         final c = _planche[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
                             children: [
                               if (c.image != null)
-                                Image.network(c.image!, fit: BoxFit.cover),
+                                Image.network(
+                                  c.image!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  loadingBuilder: (context, child, progress) {
+                                    if (progress == null) return child;
+                                    return AspectRatio(
+                                      aspectRatio: 1,
+                                      child: Container(
+                                        color: Colors.black12,
+                                        child: const Center(
+                                            child: CircularProgressIndicator()),
+                                      ),
+                                    );
+                                  },
+                                ),
                               if (c.dialogue != null)
-                                Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Text(c.dialogue!,
-                                      style: const TextStyle(fontStyle: FontStyle.italic)),
+                                Positioned(
+                                  top: 12,
+                                  left: 12,
+                                  right: 12,
+                                  child: Align(
+                                    alignment: Alignment.topLeft,
+                                    child: BulleDialogue(texte: c.dialogue!),
+                                  ),
                                 ),
                             ],
                           ),
@@ -140,5 +214,3 @@ class _EcranScenarioState extends State<EcranScenario> {
     );
   }
 }
-
-
