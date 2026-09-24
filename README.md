@@ -11,7 +11,7 @@ Application mobile qui transforme un scénario écrit en bande dessinée génér
 4. Le backend compose la planche finale (cases + bulles de dialogue) et la renvoie à l'app.
 
 ## Structure du repo
-
+ 
 ```
 app-bd-ia/
 ├── backend/          API Node.js/Express
