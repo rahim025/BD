@@ -1,0 +1,54 @@
+name: Déployer le site Flutter
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/deploy-flutter-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Installer les dépendances
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Compléter les fichiers du projet Flutter (dossier web/ manquant)
+        working-directory: mobile
+        run: flutter create . --platforms web --project-name app_bd_ia
+
+      - name: Construire le site web
+        working-directory: mobile
+        run: flutter build web --release --base-href /BD/
+
+      - name: Préparer la publication
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: mobile/build/web
+
+      - name: Publier sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
