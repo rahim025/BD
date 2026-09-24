@@ -1,0 +1,55 @@
+name: Construire l'APK de debug
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/build-apk-debug.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Installer Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Installer les dépendances
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Compléter les fichiers du projet Flutter (dossier android/ manquant)
+        working-directory: mobile
+        run: flutter create . --platforms android --project-name app_bd_ia
+
+      - name: Générer l'icône de l'app
+        working-directory: mobile
+        run: dart run flutter_launcher_icons
+
+      - name: Construire l'APK de debug
+        working-directory: mobile
+        run: flutter build apk --debug
+
+      - name: Publier l'APK en release téléchargeable
+        uses: ncipollo/release-action@v1
+        with:
+          tag: apk-debug-${{ github.run_number }}
+          name: APK de debug #${{ github.run_number }}
+          artifacts: mobile/build/app/outputs/flutter-apk/app-debug.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
