@@ -1,0 +1,35 @@
+name: app_bd_ia
+description: Application mobile qui transforme un scénario texte en bande dessinée générée par IA.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.1
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#6738B7"
+    theme_color: "#6738B7"
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/icon.png
