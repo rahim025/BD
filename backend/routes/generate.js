@@ -15,26 +15,16 @@ router.post('/planche', async (req, res) => {
 
     const cases = await decouperScenario(texte);
 
-    // Génération séquentielle (pas en parallèle) : la première case sert de référence
-    // visuelle pour garder les mêmes personnages sur toutes les cases suivantes.
-    const planche = [];
-    let referenceImageUrl = null;
-
-    for (const c of cases) {
-      const image = await genererImage(c.description, styleReference, referenceImageUrl);
-
-      // On ne garde comme référence que les vraies URL publiques (première case),
-      // pas les images encodées en base64 renvoyées pour les cases suivantes.
-      if (!referenceImageUrl && typeof image === 'string' && image.startsWith('http')) {
-        referenceImageUrl = image;
-      }
-
-      planche.push({
-        image,
-        personnages: c.personnages,
-        dialogue: c.dialogue,
-      });
-    }
+    const planche = await Promise.all(
+      cases.map(async (c) => {
+        const image = await genererImage(c.description, styleReference);
+        return {
+          image,
+          personnages: c.personnages,
+          dialogue: c.dialogue,
+        };
+      })
+    );
 
     res.json({ planche });
   } catch (err) {
