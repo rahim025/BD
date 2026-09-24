@@ -92,28 +92,7 @@ class CasePanel extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (caseBd.image != null)
-            Image.network(
-              caseBd.image!,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                return Container(
-                  color: Colors.black12,
-                  child: const Center(
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stack) => Container(
-                color: Colors.black12,
-                child: const Center(child: Icon(Icons.broken_image_outlined)),
-              ),
-            ),
+          if (caseBd.image != null) _construireImage(caseBd.image!),
           if (caseBd.dialogue != null)
             Positioned(
               top: 6,
@@ -125,6 +104,45 @@ class CasePanel extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// Affiche l'image, qu'elle soit une URL classique (flux) ou une image
+  /// encodée en base64 (nanobanana, renvoyée par le backend pour cacher la clé API).
+  Widget _construireImage(String image) {
+    if (image.startsWith('data:image')) {
+      final base64Str = image.substring(image.indexOf(',') + 1);
+      try {
+        final bytes = base64Decode(base64Str);
+        return Image.memory(bytes, fit: BoxFit.cover);
+      } catch (_) {
+        return Container(
+          color: Colors.black12,
+          child: const Center(child: Icon(Icons.broken_image_outlined)),
+        );
+      }
+    }
+
+    return Image.network(
+      image,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return Container(
+          color: Colors.black12,
+          child: const Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stack) => Container(
+        color: Colors.black12,
+        child: const Center(child: Icon(Icons.broken_image_outlined)),
       ),
     );
   }
